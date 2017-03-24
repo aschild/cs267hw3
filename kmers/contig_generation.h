@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <math.h>
 #include <string.h>
+#include <upc.h>
+#include <upc_collective.h>
 
 #ifndef MAXIMUM_CONTIG_SIZE
 #define MAXIMUM_CONTIG_SIZE 100000
@@ -39,34 +41,34 @@ struct kmer_t{
    char kmer[KMER_PACKED_LENGTH];
    char l_ext;
    char r_ext;
-   kmer_t *next;
+   shared kmer_t *next;
 };
 
 /* Start k-mer data structure */
 typedef struct start_kmer_t start_kmer_t;
 struct start_kmer_t{
-   kmer_t *kmerPtr;
+   shared kmer_t *kmerPtr;
    start_kmer_t *next;
 };
 
 /* Bucket data structure */
 typedef struct bucket_t bucket_t;
 struct bucket_t{
-   kmer_t *head;          // Pointer to the first entry of that bucket
+   shared kmer_t *head;          // Pointer to the first entry of that bucket
 };
 
 /* Hash table data structure */
 typedef struct hash_table_t hash_table_t;
 struct hash_table_t {
-   int64_t size;           // Size of the hash table
-   bucket_t *table;			// Entries of the hash table are pointers to buckets
+   int64_t size;           // Size of the hash table as pointer
+   shared bucket_t * table;			// Entries of the hash table are pointers to buckets
+   upc_lock_t * * locks;         // Locks to each bucket
 };
 
 /* Memory heap data structure */
 typedef struct memory_heap_t memory_heap_t;
 struct memory_heap_t {
-   kmer_t *heap;
-   int64_t posInHeap;
+   shared kmer_t *heap;
 };
 
 /* Returns the number of UFX kmers in a file */
