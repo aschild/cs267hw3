@@ -41,34 +41,34 @@ struct kmer_t{
    char kmer[KMER_PACKED_LENGTH];
    char l_ext;
    char r_ext;
-   shared kmer_t *next;
+   shared [1] kmer_t *next;
 };
 
 /* Start k-mer data structure */
 typedef struct start_kmer_t start_kmer_t;
 struct start_kmer_t{
-   shared kmer_t *kmerPtr;
+   shared [1] kmer_t *kmerPtr;
    start_kmer_t *next;
 };
 
 /* Bucket data structure */
 typedef struct bucket_t bucket_t;
 struct bucket_t{
-   shared kmer_t *head;          // Pointer to the first entry of that bucket
+   shared [1] kmer_t *head;          // Pointer to the first entry of that bucket
 };
 
 /* Hash table data structure */
 typedef struct hash_table_t hash_table_t;
 struct hash_table_t {
    int64_t size;           // Size of the hash table as pointer
-   shared bucket_t * table;			// Entries of the hash table are pointers to buckets
+   shared [1] bucket_t * table;			// Entries of the hash table are pointers to buckets
    upc_lock_t * * locks;         // Locks to each bucket
 };
 
 /* Memory heap data structure */
 typedef struct memory_heap_t memory_heap_t;
 struct memory_heap_t {
-   shared kmer_t *heap;
+   shared [1] kmer_t *heap;
 };
 
 /* Returns the number of UFX kmers in a file */
