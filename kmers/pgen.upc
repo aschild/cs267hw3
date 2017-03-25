@@ -115,7 +115,7 @@ int main(int argc, char *argv[]){
 	traversalTime -= gettime();
 	char parallelOutputFileName[100];
 	shared kmer_t *cur_kmer_ptr;
-	sprintf(parallelOutputFileName, "thread%d.out", MYTHREAD);
+	sprintf(parallelOutputFileName, "pgen%d.out", MYTHREAD);
 	parallelOutputFile = fopen(parallelOutputFileName, "w"); 
 
     /* Pick start nodes from the startKmersList */
