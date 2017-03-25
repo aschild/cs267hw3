@@ -41,13 +41,31 @@ int main(int argc, char *argv[]){
 
     hashtable = (shared hash_table_t*) upc_all_alloc(1, sizeof(hash_table_t));
     hashtable->size = n_buckets;
-    hashtable->table = (shared bucket_t*) upc_all_alloc(n_buckets, sizeof(bucket_t));
-    hashtable->locks = (upc_lock_t**) upc_all_alloc(n_buckets, sizeof(upc_lock_t*));
-    
-    int i;
-    upc_forall(i=0; i<n_buckets; i++; i) {
-    	hashtable->locks[i] = (upc_lock_t*) upc_global_lock_alloc();
+    hashtable->table = (shared [1] bucket_t*) upc_all_alloc(n_buckets, sizeof(bucket_t));
+    upc_barrier;
+
+    int64_t i;
+    for(i=0; i<n_buckets; i++) {
+    	hashtable->table[i].lock = upc_global_lock_alloc();
+      if (i == n_buckets-1) {
+        fprintf(stderr, "HIII\n");
+        fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+        upc_unlock(hashtable->table[i].lock);
+        fprintf(stderr, "unlock success\n");
+        fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+        upc_unlock(hashtable->table[i].lock);
+        fprintf(stderr, "unlock success 2\n");
+      }
     }
+    i = n_buckets-1;
+    fprintf(stderr, "hi");
+    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+    upc_unlock(hashtable->table[i].lock);
+    fprintf(stderr, "hiiii");
+    upc_barrier;
+    i = 3787674;
+    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+    upc_unlock(hashtable->table[i].lock);
 
     if (hashtable->table == NULL) {
        fprintf(stderr, "ERROR: Could not allocate memory for the hash table: %lld buckets of %lu bytes\n", n_buckets, sizeof(bucket_t));
@@ -60,6 +78,10 @@ int main(int argc, char *argv[]){
        exit(1);
     }
     // done creating hash table
+
+    i = 3787674;
+    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+    upc_unlock(hashtable->table[i].lock);
 
     total_chars_to_read = nKmers * LINE_SIZE;
     upc_file_t *inputFile = upc_all_fopen(input_UFX_name, UPC_RDONLY|UPC_COMMON_FP, 0, NULL);

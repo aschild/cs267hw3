@@ -55,6 +55,7 @@ struct start_kmer_t{
 typedef struct bucket_t bucket_t;
 struct bucket_t{
    shared [1] kmer_t *head;          // Pointer to the first entry of that bucket
+   upc_lock_t* lock;                // Locks to each bucket
 };
 
 /* Hash table data structure */
@@ -62,7 +63,6 @@ typedef struct hash_table_t hash_table_t;
 struct hash_table_t {
    int64_t size;           // Size of the hash table as pointer
    shared [1] bucket_t * table;			// Entries of the hash table are pointers to buckets
-   upc_lock_t * * locks;         // Locks to each bucket
 };
 
 /* Memory heap data structure */

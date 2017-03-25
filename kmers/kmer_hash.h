@@ -92,13 +92,21 @@ int add_kmer(int64_t desired_position, shared hash_table_t *hashtable, shared me
    (memory_heap->heap[pos]).l_ext = left_ext;
    (memory_heap->heap[pos]).r_ext = right_ext;
    
-   upc_lock_t* lock = hashtable->locks[hashval];
-   upc_lock(lock);
+   // fprintf(stderr, "HI\n");
+   // // upc_lock_t* lock = hashtable->locks[hashval];
+   // fprintf(stderr, "BYE\n");
+   // // fprintf(stderr, "upc lock attempt: %d\n", upc_lock_attempt(hashtable->locks[hashval]));
+   // fprintf(stderr, "hashval: %ld\n", hashval);
+   // fprintf(stderr, "size: %ld\n", hashtable->size);
+   
+   upc_lock(hashtable->table[hashval].lock);
+   // fprintf(stderr, "PASTLOCK");
    /* Fix the next pointer to point to the appropriate kmer struct */
    (memory_heap->heap[pos]).next = hashtable->table[hashval].head;
    /* Fix the head pointer of the appropriate bucket to point to the current kmer */
    hashtable->table[hashval].head = &(memory_heap->heap[pos]);
-   upc_unlock(lock);
+   upc_unlock(hashtable->table[hashval].lock);
+   // fprintf(stderr, "HELLO");
    
    return 0;
 }
