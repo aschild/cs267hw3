@@ -19,6 +19,7 @@ upcrun -n $P -shared-heap=1G ./pgen ${INPUT}
 
 
 # Sort contigs in both output files to compare
+cat pgen*.out > pgen.out
 sort serial.out > serial.sorted
 sort pgen.out > pgen.sorted
 
