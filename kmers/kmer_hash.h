@@ -52,10 +52,9 @@ int64_t hashkmer(int64_t  hashtable_size, char *seq)
 }
 
 /* Looks up a kmer in the hash table and returns a pointer to that entry */
-shared kmer_t* lookup_kmer(shared hash_table_t *hashtable, const unsigned char *kmer)
+shared kmer_t* lookup_kmer(int display, shared hash_table_t *hashtable, const unsigned char *kmer)
 {
    char packedKmer[KMER_PACKED_LENGTH];
-   char localKmer[KMER_PACKED_LENGTH];
    packSequence(kmer, (unsigned char*) packedKmer, KMER_LENGTH);
    int64_t hashval = hashkmer(hashtable->size, (char*) packedKmer);
    bucket_t cur_bucket;
@@ -63,11 +62,19 @@ shared kmer_t* lookup_kmer(shared hash_table_t *hashtable, const unsigned char *
    
    cur_bucket = hashtable->table[hashval];
    result = cur_bucket.head;
-   upc_memget(localKmer, result->kmer, KMER_PACKED_LENGTH * sizeof(char));
+
+   // if (display) {
+   //    fprintf(stderr, "packedKmer: %s, localKmer: %s\n", packedKmer, localKmer);
+   // }
    
    for (; result!=NULL; ) {
 
-      if ( memcmp(packedKmer, localKmer, KMER_PACKED_LENGTH * sizeof(char)) == 0 ) {
+      char localKmer[KMER_PACKED_LENGTH];
+      upc_memget(localKmer, result->kmer, KMER_PACKED_LENGTH * sizeof(unsigned char));
+
+      if ( memcmp(packedKmer, localKmer, KMER_PACKED_LENGTH * sizeof(unsigned char)) == 0 ) {
+         // fprintf(stderr, "Right character: %c\n", result->r_ext);
+         // fprintf(stderr, "Left character: %c\n", result->l_ext);
          return result;
       }
       result = result->next;
@@ -79,7 +86,7 @@ shared kmer_t* lookup_kmer(shared hash_table_t *hashtable, const unsigned char *
 int add_kmer(int64_t desired_position, shared hash_table_t *hashtable, shared memory_heap_t *memory_heap, shared [LINE_SIZE] const unsigned char *buffer, char left_ext, char right_ext)
 {
    char bufferKmer[KMER_LENGTH];
-   upc_memget(bufferKmer, buffer, KMER_LENGTH * sizeof(char));
+   upc_memget(bufferKmer, buffer, KMER_LENGTH * sizeof(unsigned char));
 
    /* Pack a k-mer sequence appropriately */
    char packedKmer[KMER_PACKED_LENGTH];
@@ -88,7 +95,7 @@ int add_kmer(int64_t desired_position, shared hash_table_t *hashtable, shared me
    int64_t pos = desired_position;
    
    /* Add the contents to the appropriate kmer struct in the heap */
-   upc_memput((memory_heap->heap[pos]).kmer, packedKmer, KMER_PACKED_LENGTH * sizeof(char));
+   upc_memput((memory_heap->heap[pos]).kmer, packedKmer, KMER_PACKED_LENGTH * sizeof(unsigned char));
    (memory_heap->heap[pos]).l_ext = left_ext;
    (memory_heap->heap[pos]).r_ext = right_ext;
    

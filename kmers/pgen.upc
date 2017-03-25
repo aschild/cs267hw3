@@ -47,25 +47,25 @@ int main(int argc, char *argv[]){
     int64_t i;
     for(i=0; i<n_buckets; i++) {
     	hashtable->table[i].lock = upc_global_lock_alloc();
-      if (i == n_buckets-1) {
-        fprintf(stderr, "HIII\n");
-        fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
-        upc_unlock(hashtable->table[i].lock);
-        fprintf(stderr, "unlock success\n");
-        fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
-        upc_unlock(hashtable->table[i].lock);
-        fprintf(stderr, "unlock success 2\n");
-      }
+      // if (i == n_buckets-1) {
+      //   fprintf(stderr, "HIII\n");
+      //   fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+      //   upc_unlock(hashtable->table[i].lock);
+      //   fprintf(stderr, "unlock success\n");
+      //   fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+      //   upc_unlock(hashtable->table[i].lock);
+      //   fprintf(stderr, "unlock success 2\n");
+      // }
     }
-    i = n_buckets-1;
-    fprintf(stderr, "hi");
-    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
-    upc_unlock(hashtable->table[i].lock);
-    fprintf(stderr, "hiiii");
-    upc_barrier;
-    i = 3787674;
-    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
-    upc_unlock(hashtable->table[i].lock);
+    // i = n_buckets-1;
+    // fprintf(stderr, "hi");
+    // fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+    // upc_unlock(hashtable->table[i].lock);
+    // fprintf(stderr, "hiiii");
+    // upc_barrier;
+    // i = 3787674;
+    // fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
+    // upc_unlock(hashtable->table[i].lock);
 
     if (hashtable->table == NULL) {
        fprintf(stderr, "ERROR: Could not allocate memory for the hash table: %lld buckets of %lu bytes\n", n_buckets, sizeof(bucket_t));
@@ -78,10 +78,6 @@ int main(int argc, char *argv[]){
        exit(1);
     }
     // done creating hash table
-
-    i = 3787674;
-    fprintf(stderr, "upc lock attempt for %ld: %d\n", i, upc_lock_attempt(hashtable->table[i].lock));
-    upc_unlock(hashtable->table[i].lock);
 
     total_chars_to_read = nKmers * LINE_SIZE;
     upc_file_t *inputFile = upc_all_fopen(input_UFX_name, UPC_RDONLY|UPC_COMMON_FP, 0, NULL);
@@ -115,7 +111,7 @@ int main(int argc, char *argv[]){
 
 	/** Graph traversal **/
 	traversalTime -= gettime();
-	char *parallelOutputFileName;
+	char parallelOutputFileName[100];
 	shared kmer_t *cur_kmer_ptr;
 	sprintf(parallelOutputFileName, "thread%d.out", MYTHREAD);
 	parallelOutputFile = fopen(parallelOutputFileName, "w"); 
@@ -123,11 +119,13 @@ int main(int argc, char *argv[]){
     /* Pick start nodes from the startKmersList */
     curStartNode = startKmersList; 
 
+    int print_ctr = 0;
+
     while (curStartNode != NULL ) {
        /* Need to unpack the seed first */
        cur_kmer_ptr = curStartNode->kmerPtr;
-       unsigned char* localKmer;
-       upc_memget(localKmer, cur_kmer_ptr, KMER_PACKED_LENGTH * sizeof(unsigned char));
+       unsigned char localKmer[KMER_PACKED_LENGTH];
+       upc_memget(localKmer, cur_kmer_ptr->kmer, KMER_PACKED_LENGTH * sizeof(unsigned char));
        unpackSequence((unsigned char*) localKmer,  (unsigned char*) unpackedKmer, KMER_LENGTH);
        /* Initialize current contig with the seed content */
        memcpy(cur_contig, unpackedKmer, KMER_LENGTH * sizeof(char));
@@ -136,12 +134,26 @@ int main(int argc, char *argv[]){
 
        /* Keep adding bases while not finding a terminal node */
        while (right_ext != 'F') {
+          // fprintf(stderr, "Y0\n");
           cur_contig[posInContig] = right_ext;
           posInContig++;
           /* At position cur_contig[posInContig-KMER_LENGTH] starts the last k-mer in the current contig */
-          cur_kmer_ptr = lookup_kmer(hashtable, (const unsigned char *) &cur_contig[posInContig-KMER_LENGTH]);
+          // fprintf(stderr, "Y1\n");
+          cur_kmer_ptr = lookup_kmer((print_ctr < 0), hashtable, (const unsigned char *) &cur_contig[posInContig-KMER_LENGTH]);
+          // fprintf(stderr, "Y2\n");
           right_ext = cur_kmer_ptr->r_ext;
-       } 
+          // if (right_ext == 0) {
+          //   if (print_ctr < 200) {
+          //     fprintf(stderr, "BAD KMER:  %s, posInContig: %d, pointer: %i\n", &cur_contig[posInContig-KMER_LENGTH], posInContig, (int) cur_kmer_ptr);
+          //     print_ctr++;
+          //   }
+          // } else {
+          //   fprintf(stderr, "GOOD KMER: %s, posInContig: %d\n", &cur_contig[posInContig-KMER_LENGTH], posInContig);
+          //   print_ctr++;
+          // }
+            
+          // fprintf(stderr, "Y3\n");
+       }
 
        /* Print the contig since we have found the corresponding terminal node */
        cur_contig[posInContig] = '\0';
