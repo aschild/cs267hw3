@@ -10,7 +10,7 @@
 #include "packingDNAseq.h"
 #include "kmer_hash.h"
 
-shared int64_t posInContig, contigID = 0, totBases = 0, nKmers, cur_chars_read, total_chars_to_read;
+shared int64_t nKmers, cur_chars_read, total_chars_to_read;
 shared [LINE_SIZE] unsigned char *working_buffer;
 shared hash_table_t* hashtable;
 shared memory_heap_t memory_heap;
@@ -22,6 +22,8 @@ int main(int argc, char *argv[]){
 	char cur_contig[MAXIMUM_CONTIG_SIZE], unpackedKmer[KMER_LENGTH+1], left_ext, right_ext, *input_UFX_name;
 	unpackedKmer[KMER_LENGTH] = '\0';
 	start_kmer_t *startKmersList = NULL, *curStartNode;
+  int64_t posInContig, contigID = 0, totBases = 0;
+
 	FILE *parallelOutputFile;
 
     /* Read the input file name */
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]){
     upc_barrier;
 
     int64_t i;
-    for(i=0; i<n_buckets; i++) {
+    upc_forall(i=0; i<n_buckets; i++; i) {
     	hashtable->table[i].lock = upc_global_lock_alloc();
       // if (i == n_buckets-1) {
       //   fprintf(stderr, "HIII\n");

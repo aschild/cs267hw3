@@ -57,11 +57,9 @@ shared kmer_t* lookup_kmer(int display, shared hash_table_t *hashtable, const un
    char packedKmer[KMER_PACKED_LENGTH];
    packSequence(kmer, (unsigned char*) packedKmer, KMER_LENGTH);
    int64_t hashval = hashkmer(hashtable->size, (char*) packedKmer);
-   bucket_t cur_bucket;
    shared kmer_t *result;
    
-   cur_bucket = hashtable->table[hashval];
-   result = cur_bucket.head;
+   result = (hashtable->table[hashval]).head;
 
    // if (display) {
    //    fprintf(stderr, "packedKmer: %s, localKmer: %s\n", packedKmer, localKmer);
